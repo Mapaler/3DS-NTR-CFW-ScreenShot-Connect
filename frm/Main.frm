@@ -149,11 +149,28 @@ Private fodMulti As FileOpenDialog
 Private fsd As FileSaveDialog
 Private cEvents As cFileDialogEvents
 Private fdc As IFileDialogCustomize
+'=====================================================================
+
+Private Declare Function GetVersionEx Lib "kernel32" Alias "GetVersionExA" (lpVersionInformation As OSVERSIONINFO) As Long
+
+'windows-defined type OSVERSIONINFO
+Private Type OSVERSIONINFO
+    OSVSize         As Long         'size, in bytes, of this data structure
+    dwVerMajor      As Long         'ie NT 3.51, dwVerMajor = 3; NT 4.0, dwVerMajor = 4.
+    dwVerMinor      As Long         'ie NT 3.51, dwVerMinor = 51; NT 4.0, dwVerMinor= 0.
+    dwBuildNumber   As Long         'NT: build number of the OS
+    'Win9x: build number of the OS in low-order word.
+    '       High-order word contains major & minor ver nos.
+    PlatformID      As Long         'Identifies the operating system platform.
+    szCSDVersion    As String * 128 'NT: string, such as "Service Pack 3"
+    'Win9x: 'arbitrary additional information'
+End Type
+'====================================================================================
 
 
 Private Const scrShotPtn As String = "top_(\d{4})\.bmp" '图片名称的匹配式
 Private fso As Object
-
+Private Vista As Boolean '是不是XP
 
 Private Sub chkSubfolder_Click()
     If chkSubfolder.value = Checked Then
@@ -167,66 +184,93 @@ Private Sub chkSubfolder_Click()
 End Sub
 
 Private Sub cmdInput_Click()
-'Shows the simplest Open File Dialog
-On Error Resume Next 'A major error is thrown when the user cancels the dialog box
 
-Dim isiRes As IShellItem
-Dim LPTR As Long
-Dim lOptions As FILEOPENDIALOGOPTIONS
-Dim StrTmp As String
-
-Set fodSimple = New FileOpenDialog
-
-With fodSimple
-    .SetTitle "选择输入文件夹"
+If Vista Then
+    'Shows the simplest Open File Dialog
+    On Error Resume Next 'A major error is thrown when the user cancels the dialog box
     
-    'When setting options, you should first get them
-    .GetOptions lOptions
-    lOptions = lOptions Or FOS_FILEMUSTEXIST Or FOS_PICKFOLDERS 'just an example of options... shows hidden files even if they're normally not shown
-    .SetOptions lOptions
+    Dim isiRes As IShellItem
+    Dim LPTR As Long
+    Dim lOptions As FILEOPENDIALOGOPTIONS
+    Dim StrTmp As String
+    
+    Set fodSimple = New FileOpenDialog
+    
+    With fodSimple
+        .SetTitle "选择输入文件夹"
         
-    .Show Me.hWnd
+        'When setting options, you should first get them
+        .GetOptions lOptions
+        lOptions = lOptions Or FOS_FILEMUSTEXIST Or FOS_PICKFOLDERS 'just an example of options... shows hidden files even if they're normally not shown
+        .SetOptions lOptions
+          
+        .Show Me.hWnd
+        
+        .GetResult isiRes
+        isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
+        StrTmp = BStrFromLPWStr(LPTR, True)
+        If Len(StrTmp) Then txtInput.Text = StrTmp
+        
+    End With
+    Set isiRes = Nothing
+    Set fodSimple = Nothing
+
+Else
+
+    Dim Path As String
+    Path = txtInput.Text
+    Path = BrowseForFolderByPath(Path, "选择输入文件夹", Me)
+    If Len(Path) > 0 Then
+        txtInput.Text = Path
+    End If
     
-    .GetResult isiRes
-    isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
-    StrTmp = BStrFromLPWStr(LPTR, True)
-    If Len(StrTmp) Then txtInput.Text = StrTmp
-    
-End With
-Set isiRes = Nothing
-Set fodSimple = Nothing
+End If
+
 End Sub
 
 
 Private Sub cmdOutput_Click()
-'Shows the simplest Open File Dialog
-On Error Resume Next 'A major error is thrown when the user cancels the dialog box
 
-Dim isiRes As IShellItem
-Dim LPTR As Long
-Dim lOptions As FILEOPENDIALOGOPTIONS
-Dim StrTmp As String
+If Vista Then
+    'Shows the simplest Open File Dialog
+    On Error Resume Next 'A major error is thrown when the user cancels the dialog box
+    
+    Dim isiRes As IShellItem
+    Dim LPTR As Long
+    Dim lOptions As FILEOPENDIALOGOPTIONS
+    Dim StrTmp As String
+    
+    Set fodSimple = New FileOpenDialog
+    
+    With fodSimple
+        .SetTitle "选择输出文件夹"
+        
+        'When setting options, you should first get them
+        .GetOptions lOptions
+        lOptions = lOptions Or FOS_FILEMUSTEXIST Or FOS_PICKFOLDERS 'just an example of options... shows hidden files even if they're normally not shown
+        .SetOptions lOptions
+        
+        .Show Me.hWnd
+        
+        .GetResult isiRes
+        isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
+        StrTmp = BStrFromLPWStr(LPTR, True)
+        If Len(StrTmp) Then txtInput.Text = StrTmp
+        
+    End With
+    Set isiRes = Nothing
+    Set fodSimple = Nothing
 
-Set fodSimple = New FileOpenDialog
+Else
 
-With fodSimple
-    .SetTitle "选择输出文件夹"
+    Dim Path As String
+    Path = txtOutput.Text
+    Path = BrowseForFolderByPath(Path, "选择输出文件夹", Me)
+    If Len(Path) > 0 Then
+        txtOutput.Text = Path
+    End If
     
-    'When setting options, you should first get them
-    .GetOptions lOptions
-    lOptions = lOptions Or FOS_FILEMUSTEXIST Or FOS_PICKFOLDERS 'just an example of options... shows hidden files even if they're normally not shown
-    .SetOptions lOptions
-    
-    .Show Me.hWnd
-    
-    .GetResult isiRes
-    isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
-    StrTmp = BStrFromLPWStr(LPTR, True)
-    If Len(StrTmp) Then txtInput.Text = StrTmp
-    
-End With
-Set isiRes = Nothing
-Set fodSimple = Nothing
+End If
 End Sub
 
 Private Sub fillSubFolderOutTxt()
@@ -237,6 +281,15 @@ End Sub
 
 Private Sub Form_Load()
     Set fso = CreateObject("Scripting.FileSystemObject") '文件操作系统对象
+
+    Dim OSV As OSVERSIONINFO
+    OSV.OSVSize = Len(OSV)
+    If GetVersionEx(OSV) = 1 Then
+        If OSV.dwVerMajor >= 6 Then
+            Vista = True
+        End If
+    End If
+
     chkSubfolder_Click
     Me.Caption = Me.Caption & " v" & App.Major & "." & App.Minor & "." & App.Revision
 End Sub
