@@ -171,7 +171,7 @@ Private Sub cmdInput_Click()
 On Error Resume Next 'A major error is thrown when the user cancels the dialog box
 
 Dim isiRes As IShellItem
-Dim lPtr As Long
+Dim LPTR As Long
 Dim lOptions As FILEOPENDIALOGOPTIONS
 Dim StrTmp As String
 
@@ -188,8 +188,8 @@ With fodSimple
     .Show Me.hWnd
     
     .GetResult isiRes
-    isiRes.GetDisplayName SIGDN_FILESYSPATH, lPtr
-    StrTmp = BStrFromLPWStr(lPtr, True)
+    isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
+    StrTmp = BStrFromLPWStr(LPTR, True)
     If Len(StrTmp) Then txtInput.Text = StrTmp
     
 End With
@@ -203,7 +203,7 @@ Private Sub cmdOutput_Click()
 On Error Resume Next 'A major error is thrown when the user cancels the dialog box
 
 Dim isiRes As IShellItem
-Dim lPtr As Long
+Dim LPTR As Long
 Dim lOptions As FILEOPENDIALOGOPTIONS
 Dim StrTmp As String
 
@@ -220,8 +220,8 @@ With fodSimple
     .Show Me.hWnd
     
     .GetResult isiRes
-    isiRes.GetDisplayName SIGDN_FILESYSPATH, lPtr
-    StrTmp = BStrFromLPWStr(lPtr, True)
+    isiRes.GetDisplayName SIGDN_FILESYSPATH, LPTR
+    StrTmp = BStrFromLPWStr(LPTR, True)
     If Len(StrTmp) Then txtInput.Text = StrTmp
     
 End With

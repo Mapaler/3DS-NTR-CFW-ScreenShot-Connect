@@ -6,6 +6,7 @@ Form=frm\Main.frm
 Module=mGdip; bas\mGdip1.1.bas
 Module=mTest; IFileDialog_rev3\mTestSWAP.bas
 Class=cFileDialogEvents; IFileDialog_rev3\cFileDialogEvents.cls
+Module=Ñ¡ÔñÎÄ¼þ¼Ð; bas\SelectFolder.bas
 IconForm="Main"
 Startup="Main"
 HelpFile=""
